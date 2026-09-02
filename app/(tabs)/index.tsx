@@ -1,98 +1,90 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import React, { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+// Se estiver usando Expo, os ícones já vêm embutidos:
+import { Feather } from "@expo/vector-icons";
+import { WeekCalendar } from "../../components/calendario"; // Ajuste o caminho do seu calendário
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const handleOpenAddMedication = () => {
+    // Aqui vamos colocar a navegação para a tela de cadastro de medicamentos.
+    console.log("Navegar para tela de novo medicamento");
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* O calendário */}
+      <View style={styles.calendarSection}>
+        <WeekCalendar
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+        />
+      </View>
+
+      {/* 
+        Aqui fica a FlatList com os medicamentos 
+        do dia selecionado (selectedDate).
+      */}
+      <View style={styles.medicationListSection}>
+        <Text style={styles.emptyText}>
+          Nenhum medicamento para {selectedDate.toLocaleDateString("pt-BR")}
+        </Text>
+      </View>
+
+      {/* Botão Flutuante (FAB) */}
+      <Pressable
+        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+        onPress={handleOpenAddMedication}
+      >
+        <Feather name="plus" size={28} color="#FFFFFF" />
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#F8F9FA", // Uma cor de fundo bem suave para destacar o calendário branco
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  calendarSection: {
+    paddingTop: 48, // Espaço para a barra de status do celular
+    paddingBottom: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  medicationListSection: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontFamily: "Poppins_400Regular",
+    color: "#666666",
+    fontSize: 14,
+  },
+  fab: {
+    position: "absolute",
+    right: 24,
+    bottom: 24, // Fica no canto inferior direito
+    width: 60,
+    height: 60,
+    borderRadius: 30, // Deixa perfeitamente redondo
+    backgroundColor: "#2E7D32", // O mesmo verde do seu calendário
+    alignItems: "center",
+    justifyContent: "center",
+    // Sombra para iOS
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    // Sombra para Android
+    elevation: 8,
+  },
+  fabPressed: {
+    backgroundColor: "#1B5E20", // Fica um verde mais escuro ao apertar
+    transform: [{ scale: 0.96 }], // Dá um leve efeitinho de afundar
   },
 });
