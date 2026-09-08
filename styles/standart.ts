@@ -102,6 +102,70 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
+  diasLinha: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  dia: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#D5D5D5",
+  },
+  diaSelecionado: {
+    backgroundColor: "#2E7D32",
+    borderColor: "#2E7D32",
+  },
+  diaTexto: {
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 14,
+    color: "#333333",
+  },
+  diaTextoSelecionado: {
+    color: "#FFFFFF",
+  },
+  resumo: {
+    fontFamily: "Poppins_400Regular",
+    fontSize: 12,
+    color: "#666666",
+    marginBottom: 16,
+  },
+  quantidadeLinha: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 6,
+  },
+  quantidade: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: "#D5D5D5",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quantidadeSelecionada: {
+    backgroundColor: "#2E7D32",
+    borderColor: "#2E7D32",
+  },
+  quantidadeTexto: {
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 15,
+    color: "#333333",
+  },
+  quantidadeTextoSelecionado: {
+    color: "#FFFFFF",
+  },
+  itemInfo: {
+    fontFamily: "Poppins_400Regular",
+    fontSize: 13,
+    color: "#666666",
+    marginTop: 4,
+  },
 });
 
 export { styles };
