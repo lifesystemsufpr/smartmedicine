@@ -1,11 +1,12 @@
+import { useRemedios } from "@/app/contexts/remediosContext";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-    FlatList,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
-    type ViewToken,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ViewToken,
 } from "react-native";
 
 // Calculamos a largura exata que os dias ocupam para que a barra de rolagem
@@ -29,6 +30,29 @@ const MONTH_NAMES = [
   "Novembro",
   "Dezembro",
 ];
+
+const DIAS_SEMANA = [
+  { inicial: "D", abreviacao: "dom" },
+  { inicial: "S", abreviacao: "seg" },
+  { inicial: "T", abreviacao: "ter" },
+  { inicial: "Q", abreviacao: "qua" },
+  { inicial: "Q", abreviacao: "qui" },
+  { inicial: "S", abreviacao: "sex" },
+  { inicial: "S", abreviacao: "sáb" },
+];
+
+// Mesma formatação usada no cadastro — aqui para exibir na lista do calendário
+function formatarDias(dias: string[]): string {
+  if (dias.length === 0) return "Nenhum dia selecionado";
+  if (dias.length === DIAS_SEMANA.length) return "Todos os dias";
+
+  const primeiroDia = dias[0];
+  const artigo =
+    primeiroDia === "dom" || primeiroDia === "sáb" ? "Todo" : "Toda";
+
+  if (dias.length === 1) return `${artigo} ${dias[0]}`;
+  return `${artigo} ${dias.slice(0, -1).join(", ")} e ${dias[dias.length - 1]}`;
+}
 
 function getStartOfWeekDate(date: Date) {
   const resultDate = new Date(date);
@@ -69,6 +93,8 @@ export function WeekCalendar({
   selectedDate,
   onSelectDate,
 }: WeekCalendarProps) {
+  const { remedios } = useRemedios(); // lista compartilhada vem do Context
+
   const currentDate = useMemo(() => new Date(), []);
   const currentWeekStartDate = useMemo(
     () => getStartOfWeekDate(currentDate),
@@ -200,6 +226,23 @@ export function WeekCalendar({
         style={styles.flatList} // Adicionamos estilo à própria FlatList
         contentContainerStyle={styles.flatListContent}
       />
+
+      {/* LISTA DE REMÉDIOS vinda do Context */}
+      <Text style={styles.listTitle}>Meus Remédios</Text>
+      <FlatList
+        data={remedios}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.listItem}>
+            <Text style={styles.listItemNome}>{item.nome}</Text>
+            <Text style={styles.listItemInfo}>
+              {formatarDias(item.dias)} • {item.quantidade}x por dia
+            </Text>
+          </View>
+        )}
+        contentContainerStyle={styles.listContent}
+        style={styles.list}
+      />
     </View>
   );
 }
@@ -207,6 +250,7 @@ export function WeekCalendar({
 const styles = StyleSheet.create({
   calendarContainer: {
     gap: 12,
+    flex: 1, // agora o conteúdo ocupa a tela inteira para a lista rolar
   },
   monthHeader: {
     fontFamily: "Poppins_600SemiBold",
@@ -267,5 +311,35 @@ const styles = StyleSheet.create({
   dayNumberTextSelected: {
     color: "#FFFFFF",
     fontFamily: "Poppins_600SemiBold",
+  },
+  listTitle: {
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 15,
+    color: "#1B5E20",
+    paddingHorizontal: 24,
+  },
+  list: {
+    flex: 1, // pega o espaço restante da tela e rola verticalmente
+  },
+  listContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 120,
+    gap: 8,
+  },
+  listItem: {
+    backgroundColor: "#F0F4F0",
+    padding: 14,
+    borderRadius: 8,
+  },
+  listItemNome: {
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 15,
+    color: "#333333",
+  },
+  listItemInfo: {
+    fontFamily: "Poppins_400Regular",
+    fontSize: 13,
+    color: "#666666",
+    marginTop: 4,
   },
 });

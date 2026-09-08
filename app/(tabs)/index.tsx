@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 // Se estiver usando Expo, os ícones já vêm embutidos:
@@ -35,7 +36,7 @@ export default function HomeScreen() {
       {/* Botão Flutuante (FAB) */}
       <Pressable
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-        onPress={handleOpenAddMedication}
+        onPress={() => router.push("/cadastro_remedios")}
       >
         <Feather name="plus" size={28} color="#FFFFFF" />
       </Pressable>
