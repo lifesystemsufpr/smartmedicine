@@ -10,14 +10,34 @@ const tintColorDark = "#fff";
 
 export const AppColors = {
   background: "#FFFFFF",
+  backgroundAlt: "#F8F9FA",
+  surface: "#F0F4F0",
+  surfaceAccent: "#E8F5E9",
   title: "#1B5E20",
   label: "#333333",
   inputBorder: "#D5D5D5",
   inputText: "#222222",
   primary: "#2E7D32",
+  inactive: "#9AA0A6",
   buttonText: "#FFFFFF",
   secondaryText: "#666666",
+  muted: "#999999",
+  disabled: "#CCCCCC",
+  divider: "#EDEDED",
+  danger: "#C62828",
+  dangerLight: "#FFCDD2",
 };
+
+// Paleta de cores que o usuário escolhe pra identificar cada tratamento
+// (no cadastro e nas bolinhas do calendário).
+export const CORES_TRATAMENTO = [
+  "#2E7D32", // verde
+  "#2F6FAD", // azul
+  "#7B5EA7", // roxo
+  "#C2568C", // rosa
+  "#B8860B", // âmbar
+  "#0E8F8F", // ciano
+];
 
 export const AppFonts = {
   regular: "Poppins_400Regular",

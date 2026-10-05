@@ -9,7 +9,9 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
-import { RemediosProvider } from "./contexts/remediosContext";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { MedicamentosProvider } from "@/contexts/medicamentosContext";
+import { TratamentosProvider } from "@/contexts/tratamentosContext";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -24,21 +26,25 @@ export default function RootLayout() {
   }
 
   return (
-    <RemediosProvider>
-      <ThemeProvider value={DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="login" options={{ headerShown: false }} />
+    <SafeAreaProvider>
+      <MedicamentosProvider>
+        <TratamentosProvider>
+          <ThemeProvider value={DefaultTheme}>
+            <Stack>
+              <Stack.Screen name="login" options={{ headerShown: false }} />
 
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-          <Stack.Screen
-            name="modal"
-            options={{ presentation: "modal", title: "Modal" }}
-          />
-        </Stack>
+              <Stack.Screen
+                name="modal"
+                options={{ presentation: "modal", title: "Modal" }}
+              />
+            </Stack>
 
-        <StatusBar style="dark" />
-      </ThemeProvider>
-    </RemediosProvider>
+            <StatusBar style="dark" />
+          </ThemeProvider>
+        </TratamentosProvider>
+      </MedicamentosProvider>
+    </SafeAreaProvider>
   );
 }

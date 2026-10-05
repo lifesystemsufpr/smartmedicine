@@ -1,9 +1,11 @@
 import { StyleSheet } from "react-native";
 
+import { AppColors, AppFonts } from "@/constants/theme";
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: AppColors.background,
   },
 
   content: {
@@ -14,9 +16,9 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontFamily: "Poppins_700Bold",
+    fontFamily: AppFonts.bold,
     fontSize: 35,
-    color: "#1B5E20",
+    color: AppColors.title,
     marginBottom: 80,
   },
 
@@ -27,9 +29,9 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontFamily: "Poppins_500Medium",
+    fontFamily: AppFonts.medium,
     fontSize: 14,
-    color: "#333333",
+    color: AppColors.label,
     marginBottom: 7,
   },
 
@@ -37,13 +39,13 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 50,
     borderWidth: 1,
-    borderColor: "#D5D5D5",
+    borderColor: AppColors.inputBorder,
     borderRadius: 8,
     paddingHorizontal: 14,
-    fontFamily: "Poppins_400Regular",
+    fontFamily: AppFonts.regular,
     fontSize: 14,
-    color: "#222222",
-    backgroundColor: "#FFFFFF",
+    color: AppColors.inputText,
+    backgroundColor: AppColors.background,
   },
 
   forgotPassword: {
@@ -52,14 +54,14 @@ const styles = StyleSheet.create({
   },
 
   forgotPasswordText: {
-    fontFamily: "Poppins_500Medium",
+    fontFamily: AppFonts.medium,
     fontSize: 13,
-    color: "#2E7D32",
+    color: AppColors.primary,
   },
 
   button: {
     height: 50,
-    backgroundColor: "#2E7D32",
+    backgroundColor: AppColors.primary,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -67,9 +69,9 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    fontFamily: "Poppins_600SemiBold",
+    fontFamily: AppFonts.semiBold,
     fontSize: 15,
-    color: "#FFFFFF",
+    color: AppColors.buttonText,
   },
 
   registerContainer: {
@@ -80,58 +82,32 @@ const styles = StyleSheet.create({
   },
 
   registerText: {
-    fontFamily: "Poppins_400Regular",
+    fontFamily: AppFonts.regular,
     fontSize: 13,
-    color: "#666666",
+    color: AppColors.secondaryText,
   },
 
   registerLink: {
-    fontFamily: "Poppins_600SemiBold",
+    fontFamily: AppFonts.semiBold,
     fontSize: 13,
-    color: "#2E7D32",
+    color: AppColors.primary,
   },
 
   textItem: {
-    fontFamily: "Poppins_400Regular",
+    fontFamily: AppFonts.regular,
     fontSize: 13,
-    color: "#666666",
+    color: AppColors.secondaryText,
   },
 
   listItem: {
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  diasLinha: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  dia: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "#D5D5D5",
-  },
-  diaSelecionado: {
-    backgroundColor: "#2E7D32",
-    borderColor: "#2E7D32",
-  },
-  diaTexto: {
-    fontFamily: "Poppins_600SemiBold",
-    fontSize: 14,
-    color: "#333333",
-  },
-  diaTextoSelecionado: {
-    color: "#FFFFFF",
+    borderBottomColor: AppColors.divider,
   },
   resumo: {
-    fontFamily: "Poppins_400Regular",
+    fontFamily: AppFonts.regular,
     fontSize: 12,
-    color: "#666666",
+    color: AppColors.secondaryText,
     marginBottom: 16,
   },
   quantidadeLinha: {
@@ -144,29 +120,28 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: "#D5D5D5",
+    borderColor: AppColors.inputBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   quantidadeSelecionada: {
-    backgroundColor: "#2E7D32",
-    borderColor: "#2E7D32",
+    backgroundColor: AppColors.primary,
+    borderColor: AppColors.primary,
   },
   quantidadeTexto: {
-    fontFamily: "Poppins_600SemiBold",
+    fontFamily: AppFonts.semiBold,
     fontSize: 15,
-    color: "#333333",
+    color: AppColors.label,
   },
   quantidadeTextoSelecionado: {
-    color: "#FFFFFF",
+    color: AppColors.buttonText,
   },
   itemInfo: {
-    fontFamily: "Poppins_400Regular",
+    fontFamily: AppFonts.regular,
     fontSize: 13,
-    color: "#666666",
+    color: AppColors.secondaryText,
     marginTop: 4,
   },
 });
 
 export { styles };
-
