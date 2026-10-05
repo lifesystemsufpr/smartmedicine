@@ -1,15 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { AppColors, AppFonts } from "../constants/theme";
-
-export const DIAS_SEMANA = [
-  { inicial: "D", abreviacao: "dom" },
-  { inicial: "S", abreviacao: "seg" },
-  { inicial: "T", abreviacao: "ter" },
-  { inicial: "Q", abreviacao: "qua" },
-  { inicial: "Q", abreviacao: "qui" },
-  { inicial: "S", abreviacao: "sex" },
-  { inicial: "S", abreviacao: "sáb" },
-];
+import { AppColors, AppFonts } from "@/constants/theme";
+import { DIAS_SEMANA } from "@/utils/calendarioHelpers";
 
 type Props = {
   diasSelecionados: boolean[]; // 7 posições, true = dia marcado
@@ -65,9 +56,9 @@ const styles = StyleSheet.create({
   diaTexto: {
     fontFamily: AppFonts.semiBold,
     fontSize: 14,
-    color: "#333333",
+    color: AppColors.label,
   },
   diaTextoSelecionado: {
-    color: "#FFFFFF",
+    color: AppColors.buttonText,
   },
 });

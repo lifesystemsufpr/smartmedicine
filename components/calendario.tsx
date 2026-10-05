@@ -1,4 +1,6 @@
-import { useRemedios } from "@/app/contexts/remediosContext";
+import { useMedicamentos } from "@/contexts/medicamentosContext";
+import { useTratamentos } from "@/contexts/tratamentosContext";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   FlatList,
@@ -9,71 +11,23 @@ import {
   type ViewToken,
 } from "react-native";
 
+import { CalendarioMensalModal } from "./calendarioMensal";
+import { AppColors, AppFonts } from "@/constants/theme";
+import {
+  DIAS_SEMANA,
+  MONTH_NAMES,
+  WEEKDAY_INITIALS,
+  addDaysToDate,
+  checkIsSameDay,
+  formatarDias,
+  getStartOfWeekDate,
+} from "@/utils/calendarioHelpers";
+
 // Calculamos a largura exata que os dias ocupam para que a barra de rolagem
 // fique do tamanho exato do calendário e não vá até o final da tela.
 const CALENDAR_WIDTH = 350;
 const PAST_WEEKS_COUNT = 26;
 const FUTURE_WEEKS_COUNT = 26;
-
-const WEEKDAY_INITIALS = ["D", "S", "T", "Q", "Q", "S", "S"];
-const MONTH_NAMES = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
-];
-
-const DIAS_SEMANA = [
-  { inicial: "D", abreviacao: "dom" },
-  { inicial: "S", abreviacao: "seg" },
-  { inicial: "T", abreviacao: "ter" },
-  { inicial: "Q", abreviacao: "qua" },
-  { inicial: "Q", abreviacao: "qui" },
-  { inicial: "S", abreviacao: "sex" },
-  { inicial: "S", abreviacao: "sáb" },
-];
-
-// Mesma formatação usada no cadastro — aqui para exibir na lista do calendário
-function formatarDias(dias: string[]): string {
-  if (dias.length === 0) return "Nenhum dia selecionado";
-  if (dias.length === DIAS_SEMANA.length) return "Todos os dias";
-
-  const primeiroDia = dias[0];
-  const artigo =
-    primeiroDia === "dom" || primeiroDia === "sáb" ? "Todo" : "Toda";
-
-  if (dias.length === 1) return `${artigo} ${dias[0]}`;
-  return `${artigo} ${dias.slice(0, -1).join(", ")} e ${dias[dias.length - 1]}`;
-}
-
-function getStartOfWeekDate(date: Date) {
-  const resultDate = new Date(date);
-  resultDate.setHours(0, 0, 0, 0);
-  resultDate.setDate(resultDate.getDate() - resultDate.getDay());
-  return resultDate;
-}
-
-function addDaysToDate(date: Date, daysToAdd: number) {
-  const resultDate = new Date(date);
-  resultDate.setDate(resultDate.getDate() + daysToAdd);
-  return resultDate;
-}
-
-function checkIsSameDay(firstDate: Date, secondDate: Date) {
-  return (
-    firstDate.getFullYear() === secondDate.getFullYear() &&
-    firstDate.getMonth() === secondDate.getMonth() &&
-    firstDate.getDate() === secondDate.getDate()
-  );
-}
 
 function getFormattedMonthAndYear(date: Date) {
   return `${MONTH_NAMES[date.getMonth()]} de ${date.getFullYear()}`;
@@ -93,7 +47,32 @@ export function WeekCalendar({
   selectedDate,
   onSelectDate,
 }: WeekCalendarProps) {
-  const { remedios } = useRemedios(); // lista compartilhada vem do Context
+  const { tratamentos } = useTratamentos(); // lista compartilhada vem do Context
+  const { medicamentos } = useMedicamentos();
+
+  const diaSelecionadoAbreviacao = DIAS_SEMANA[selectedDate.getDay()].abreviacao;
+  const tratamentosDoDia = useMemo(
+    () =>
+      tratamentos.filter((tratamento) =>
+        tratamento.dias.includes(diaSelecionadoAbreviacao),
+      ),
+    [tratamentos, diaSelecionadoAbreviacao],
+  );
+
+  // Para cada dia da semana (dom, seg, ter...), as cores distintas dos
+  // tratamentos que caem nele — vira uma bolinha colorida por tratamento.
+  const coresPorDiaSemana = useMemo(() => {
+    const mapa = new Map<string, string[]>();
+    tratamentos.forEach((tratamento) => {
+      tratamento.dias.forEach((diaAbreviado) => {
+        const atual = mapa.get(diaAbreviado) ?? [];
+        if (!atual.includes(tratamento.cor)) {
+          mapa.set(diaAbreviado, [...atual, tratamento.cor]);
+        }
+      });
+    });
+    return mapa;
+  }, [tratamentos]);
 
   const currentDate = useMemo(() => new Date(), []);
   const currentWeekStartDate = useMemo(
@@ -126,6 +105,8 @@ export function WeekCalendar({
   const [currentMonthLabel, setCurrentMonthLabel] = useState(() =>
     getFormattedMonthAndYear(currentDate),
   );
+  const [calendarioExpandidoVisivel, setCalendarioExpandidoVisivel] =
+    useState(false);
 
   // Fica observando o scroll do usuário para saber qual semana ele está vendo agora
   const handleVisibleWeeksChange = useRef(
@@ -162,6 +143,11 @@ export function WeekCalendar({
         {item.daysInWeek.map((dayDate) => {
           const isToday = checkIsSameDay(dayDate, currentDate);
           const isSelected = checkIsSameDay(dayDate, selectedDate);
+          const coresDoDia =
+            coresPorDiaSemana.get(DIAS_SEMANA[dayDate.getDay()].abreviacao) ??
+            [];
+          const corUnica = coresDoDia.length === 1 ? coresDoDia[0] : undefined;
+          const temVariasCores = coresDoDia.length > 1;
 
           return (
             <Pressable
@@ -194,17 +180,42 @@ export function WeekCalendar({
                   {dayDate.getDate()}
                 </Text>
               </View>
+              {corUnica && (
+                <View
+                  style={[
+                    styles.barraTratamento,
+                    { backgroundColor: corUnica },
+                  ]}
+                />
+              )}
+              {temVariasCores && (
+                <View style={styles.dayDotsRow}>
+                  {coresDoDia.slice(0, 3).map((cor, index) => (
+                    <View
+                      key={index}
+                      style={[styles.dayDot, { backgroundColor: cor }]}
+                    />
+                  ))}
+                </View>
+              )}
             </Pressable>
           );
         })}
       </View>
     ),
-    [onSelectDate, selectedDate, currentDate],
+    [onSelectDate, selectedDate, currentDate, coresPorDiaSemana],
   );
 
   return (
     <View style={styles.calendarContainer}>
-      <Text style={styles.monthHeader}>{currentMonthLabel}</Text>
+      <Pressable
+        style={styles.monthHeaderRow}
+        onPress={() => setCalendarioExpandidoVisivel(true)}
+        hitSlop={8}
+      >
+        <Text style={styles.monthHeader}>{currentMonthLabel}</Text>
+        <MaterialIcons name="calendar-month" size={16} color={AppColors.primary} />
+      </Pressable>
 
       <FlatList //
         data={calendarWeeks}
@@ -227,21 +238,44 @@ export function WeekCalendar({
         contentContainerStyle={styles.flatListContent}
       />
 
-      {/* LISTA DE REMÉDIOS vinda do Context */}
-      <Text style={styles.listTitle}>Meus Remédios</Text>
+      {/* TRATAMENTOS DO DIA SELECIONADO, vindos do Context */}
+      <Text style={styles.listTitle}>Tratamentos do dia</Text>
       <FlatList
-        data={remedios}
+        data={tratamentosDoDia}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.listItem}>
-            <Text style={styles.listItemNome}>{item.nome}</Text>
-            <Text style={styles.listItemInfo}>
-              {formatarDias(item.dias)} • {item.quantidade}x por dia
-            </Text>
-          </View>
-        )}
+        renderItem={({ item }) => {
+          const medicamento = medicamentos.find(
+            (m) => m.id === item.medicamentoId,
+          );
+          return (
+            <View style={styles.listItem}>
+              <View style={styles.listItemHeader}>
+                <View
+                  style={[styles.listItemCorDot, { backgroundColor: item.cor }]}
+                />
+                <Text style={styles.listItemNome}>{item.nome}</Text>
+              </View>
+              <Text style={styles.listItemInfo}>
+                {medicamento?.nome ?? "Medicamento removido"} •{" "}
+                {formatarDias(item.dias)} • {item.quantidadePorDia}x por dia
+              </Text>
+            </View>
+          );
+        }}
+        ListEmptyComponent={
+          <Text style={styles.emptyListText}>
+            Nenhum tratamento para esse dia.
+          </Text>
+        }
         contentContainerStyle={styles.listContent}
         style={styles.list}
+      />
+
+      <CalendarioMensalModal
+        visible={calendarioExpandidoVisivel}
+        selectedDate={selectedDate}
+        onSelectDate={onSelectDate}
+        onClose={() => setCalendarioExpandidoVisivel(false)}
       />
     </View>
   );
@@ -252,13 +286,18 @@ const styles = StyleSheet.create({
     gap: 12,
     flex: 1, // agora o conteúdo ocupa a tela inteira para a lista rolar
   },
-  monthHeader: {
-    fontFamily: "Poppins_600SemiBold",
-    fontSize: 16,
-    color: "#1B5E20",
-    paddingHorizontal: 24,
-    textAlign: "center",
+  monthHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
     marginBottom: 4,
+  },
+  monthHeader: {
+    fontFamily: AppFonts.semiBold,
+    fontSize: 16,
+    color: AppColors.title,
+    textAlign: "center",
   },
   flatList: {
     width: CALENDAR_WIDTH, // Limita a largura do scroll à largura do calendário
@@ -278,12 +317,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   weekdayText: {
-    fontFamily: "Poppins_500Medium",
+    fontFamily: AppFonts.medium,
     fontSize: 12,
-    color: "#999999",
+    color: AppColors.muted,
   },
   weekdayTextSelected: {
-    color: "#2E7D32",
+    color: AppColors.primary,
   },
   dayCircle: {
     width: 36,
@@ -294,28 +333,45 @@ const styles = StyleSheet.create({
   },
   dayCircleToday: {
     borderWidth: 1.5,
-    borderColor: "#2E7D32",
+    borderColor: AppColors.primary,
   },
   dayCircleSelected: {
-    backgroundColor: "#2E7D32",
+    borderWidth: 2,
+    borderColor: AppColors.label,
   },
   dayNumberText: {
-    fontFamily: "Poppins_500Medium",
+    fontFamily: AppFonts.medium,
     fontSize: 14,
-    color: "#333333",
+    color: AppColors.label,
   },
   dayNumberTextToday: {
-    color: "#2E7D32",
-    fontFamily: "Poppins_600SemiBold",
+    color: AppColors.primary,
+    fontFamily: AppFonts.semiBold,
   },
   dayNumberTextSelected: {
-    color: "#FFFFFF",
-    fontFamily: "Poppins_600SemiBold",
+    fontFamily: AppFonts.semiBold,
+  },
+  barraTratamento: {
+    width: 18,
+    height: 5,
+    borderRadius: 2.5,
+    marginTop: 4,
+  },
+  dayDotsRow: {
+    flexDirection: "row",
+    gap: 3,
+    height: 5,
+    marginTop: 4,
+  },
+  dayDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   listTitle: {
-    fontFamily: "Poppins_600SemiBold",
+    fontFamily: AppFonts.semiBold,
     fontSize: 15,
-    color: "#1B5E20",
+    color: AppColors.title,
     paddingHorizontal: 24,
   },
   list: {
@@ -327,19 +383,35 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   listItem: {
-    backgroundColor: "#F0F4F0",
+    backgroundColor: AppColors.surface,
     padding: 14,
     borderRadius: 8,
   },
+  listItemHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  listItemCorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
   listItemNome: {
-    fontFamily: "Poppins_600SemiBold",
+    fontFamily: AppFonts.semiBold,
     fontSize: 15,
-    color: "#333333",
+    color: AppColors.label,
   },
   listItemInfo: {
-    fontFamily: "Poppins_400Regular",
+    fontFamily: AppFonts.regular,
     fontSize: 13,
-    color: "#666666",
+    color: AppColors.secondaryText,
     marginTop: 4,
+  },
+  emptyListText: {
+    fontFamily: AppFonts.regular,
+    fontSize: 13,
+    color: AppColors.muted,
+    paddingHorizontal: 24,
   },
 });

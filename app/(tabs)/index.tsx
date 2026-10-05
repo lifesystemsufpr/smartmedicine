@@ -1,17 +1,13 @@
 import { router } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 // Se estiver usando Expo, os ícones já vêm embutidos:
 import { Feather } from "@expo/vector-icons";
-import { WeekCalendar } from "../../components/calendario"; // Ajuste o caminho do seu calendário
+import { WeekCalendar } from "@/components/calendario";
+import { AppColors, AppFonts } from "@/constants/theme";
 
 export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
-
-  const handleOpenAddMedication = () => {
-    // Aqui vamos colocar a navegação para a tela de cadastro de medicamentos.
-    console.log("Navegar para tela de novo medicamento");
-  };
 
   return (
     <View style={styles.container}>
@@ -23,8 +19,8 @@ export default function HomeScreen() {
         />
       </View>
 
-      {/* 
-        Aqui fica a FlatList com os medicamentos 
+      {/*
+        Aqui fica a FlatList com os medicamentos
         do dia selecionado (selectedDate).
       */}
       <View style={styles.medicationListSection}>
@@ -36,9 +32,9 @@ export default function HomeScreen() {
       {/* Botão Flutuante (FAB) */}
       <Pressable
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-        onPress={() => router.push("/cadastro_remedios")}
+        onPress={() => router.push("/cadastro_tratamento")}
       >
-        <Feather name="plus" size={28} color="#FFFFFF" />
+        <Feather name="plus" size={28} color={AppColors.buttonText} />
       </Pressable>
     </View>
   );
@@ -47,14 +43,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA", // Uma cor de fundo bem suave para destacar o calendário branco
+    backgroundColor: AppColors.backgroundAlt, // fundo bem suave para destacar o calendário branco
   },
   calendarSection: {
     paddingTop: 48, // Espaço para a barra de status do celular
     paddingBottom: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: AppColors.background,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: AppColors.divider,
   },
   medicationListSection: {
     flex: 1,
@@ -62,8 +58,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   emptyText: {
-    fontFamily: "Poppins_400Regular",
-    color: "#666666",
+    fontFamily: AppFonts.regular,
+    color: AppColors.secondaryText,
     fontSize: 14,
   },
   fab: {
@@ -73,7 +69,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30, // Deixa perfeitamente redondo
-    backgroundColor: "#2E7D32", // O mesmo verde do seu calendário
+    backgroundColor: AppColors.primary,
     alignItems: "center",
     justifyContent: "center",
     // Sombra para iOS
@@ -85,7 +81,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabPressed: {
-    backgroundColor: "#1B5E20", // Fica um verde mais escuro ao apertar
+    backgroundColor: AppColors.title, // verde mais escuro ao apertar
     transform: [{ scale: 0.96 }], // Dá um leve efeitinho de afundar
   },
 });
