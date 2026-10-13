@@ -1,13 +1,17 @@
+import { WeekCalendar } from "@/components/calendario";
+import { ResumoCards } from "@/components/resumoCards";
+import { AppColors } from "@/constants/theme";
+import { useMedicamentos } from "@/contexts/medicamentosContext";
+import { useTratamentos } from "@/contexts/tratamentosContext";
+import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-// Se estiver usando Expo, os ícones já vêm embutidos:
-import { Feather } from "@expo/vector-icons";
-import { WeekCalendar } from "@/components/calendario";
-import { AppColors, AppFonts } from "@/constants/theme";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const { medicamentos } = useMedicamentos();
+  const { tratamentos } = useTratamentos();
 
   return (
     <View style={styles.container}>
@@ -19,15 +23,14 @@ export default function HomeScreen() {
         />
       </View>
 
-      {/*
-        Aqui fica a FlatList com os medicamentos
-        do dia selecionado (selectedDate).
-      */}
-      <View style={styles.medicationListSection}>
-        <Text style={styles.emptyText}>
-          Nenhum medicamento para {selectedDate.toLocaleDateString("pt-BR")}
-        </Text>
-      </View>
+      {/* Resumo geral: estoque acabando, consumo da semana e validade */}
+      <ScrollView
+        style={styles.resumoSection}
+        contentContainerStyle={styles.resumoContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <ResumoCards medicamentos={medicamentos} tratamentos={tratamentos} />
+      </ScrollView>
 
       {/* Botão Flutuante (FAB) */}
       <Pressable
@@ -43,32 +46,30 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.backgroundAlt, // fundo bem suave para destacar o calendário branco
+    backgroundColor: AppColors.backgroundAlt,
   },
   calendarSection: {
-    paddingTop: 48, // Espaço para a barra de status do celular
+    paddingTop: 48,
     paddingBottom: 16,
     backgroundColor: AppColors.background,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.divider,
   },
-  medicationListSection: {
+  resumoSection: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
-  emptyText: {
-    fontFamily: AppFonts.regular,
-    color: AppColors.secondaryText,
-    fontSize: 14,
+  resumoContent: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 96,
   },
   fab: {
     position: "absolute",
     right: 24,
-    bottom: 24, // Fica no canto inferior direito
+    bottom: 24,
     width: 60,
     height: 60,
-    borderRadius: 30, // Deixa perfeitamente redondo
+    borderRadius: 30,
     backgroundColor: AppColors.primary,
     alignItems: "center",
     justifyContent: "center",

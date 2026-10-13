@@ -54,7 +54,7 @@ function getAvisoEstoque(
 
     if (diasRestantes <= DIAS_ALERTA_ESTOQUE) {
       const dias = Math.max(1, Math.floor(diasRestantes));
-      return `Acaba em ~${dias} dia${dias === 1 ? "" : "s"}`;
+      return `Acaba em ${dias} dia${dias === 1 ? "" : "s"}`;
     }
 
     return null;
@@ -106,7 +106,11 @@ export default function MedicamentosScreen() {
       return;
     }
 
-    if (!quantidadeEstoque.trim() || Number.isNaN(quantidade) || quantidade <= 0) {
+    if (
+      !quantidadeEstoque.trim() ||
+      Number.isNaN(quantidade) ||
+      quantidade <= 0
+    ) {
       setError("Informe uma quantidade em estoque válida.");
       return;
     }
@@ -131,7 +135,11 @@ export default function MedicamentosScreen() {
       {medicamentos.length === 0 ? (
         <View style={styles.content}>
           <View style={styles.emptyIconWrap}>
-            <MaterialIcons name="medication" size={36} color={AppColors.primary} />
+            <MaterialIcons
+              name="medication"
+              size={36}
+              color={AppColors.primary}
+            />
           </View>
           <Text style={styles.emptyTitle}>Nenhum medicamento cadastrado</Text>
           <Text style={styles.emptyText}>
@@ -153,9 +161,7 @@ export default function MedicamentosScreen() {
                   {item.quantidadeEstoque} {item.unidade} em estoque
                   {item.validade ? ` • validade ${item.validade}` : ""}
                 </Text>
-                {aviso && (
-                  <Text style={styles.avisoEstoque}>⚠ {aviso}</Text>
-                )}
+                {aviso && <Text style={styles.avisoEstoque}>⚠ {aviso}</Text>}
               </View>
             );
           }}
@@ -252,7 +258,11 @@ export default function MedicamentosScreen() {
             {error && <Text style={styles.errorText}>{error}</Text>}
 
             <Pressable style={styles.addButton} onPress={handleAdicionar}>
-              <MaterialIcons name="add" size={22} color={AppColors.buttonText} />
+              <MaterialIcons
+                name="add"
+                size={22}
+                color={AppColors.buttonText}
+              />
               <Text style={styles.addButtonText}>Adicionar medicamento</Text>
             </Pressable>
           </View>

@@ -11,7 +11,6 @@ import {
   type ViewToken,
 } from "react-native";
 
-import { CalendarioMensalModal } from "./calendarioMensal";
 import { AppColors, AppFonts } from "@/constants/theme";
 import {
   DIAS_SEMANA,
@@ -22,6 +21,7 @@ import {
   formatarDias,
   getStartOfWeekDate,
 } from "@/utils/calendarioHelpers";
+import { CalendarioMensalModal } from "./calendarioMensal";
 
 // Calculamos a largura exata que os dias ocupam para que a barra de rolagem
 // fique do tamanho exato do calendário e não vá até o final da tela.
@@ -50,7 +50,8 @@ export function WeekCalendar({
   const { tratamentos } = useTratamentos(); // lista compartilhada vem do Context
   const { medicamentos } = useMedicamentos();
 
-  const diaSelecionadoAbreviacao = DIAS_SEMANA[selectedDate.getDay()].abreviacao;
+  const diaSelecionadoAbreviacao =
+    DIAS_SEMANA[selectedDate.getDay()].abreviacao;
   const tratamentosDoDia = useMemo(
     () =>
       tratamentos.filter((tratamento) =>
@@ -214,7 +215,11 @@ export function WeekCalendar({
         hitSlop={8}
       >
         <Text style={styles.monthHeader}>{currentMonthLabel}</Text>
-        <MaterialIcons name="calendar-month" size={16} color={AppColors.primary} />
+        <MaterialIcons
+          name="calendar-month"
+          size={16}
+          color={AppColors.primary}
+        />
       </Pressable>
 
       <FlatList //
@@ -302,9 +307,10 @@ const styles = StyleSheet.create({
   flatList: {
     width: CALENDAR_WIDTH, // Limita a largura do scroll à largura do calendário
     alignSelf: "center", // Centraliza a lista na tela inteira
+    height: 30,
   },
   flatListContent: {
-    paddingBottom: 12,
+    paddingBottom: 0,
   },
   weekRow: {
     width: CALENDAR_WIDTH, // As semanas agora têm exatamente o mesmo tamanho da lista
@@ -375,16 +381,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   list: {
-    flex: 1, // pega o espaço restante da tela e rola verticalmente
+    flex: 1,
+    padding: 30, // pega o espaço restante da tela e rola verticalmente
   },
   listContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 0,
     paddingBottom: 120,
     gap: 8,
   },
   listItem: {
     backgroundColor: AppColors.surface,
-    padding: 14,
+    padding: 10,
     borderRadius: 8,
   },
   listItemHeader: {
