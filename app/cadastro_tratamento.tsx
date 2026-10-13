@@ -16,6 +16,7 @@ import { AppColors, AppFonts, CORES_TRATAMENTO } from "@/constants/theme";
 import { useMedicamentos } from "@/contexts/medicamentosContext";
 import { useTratamentos } from "@/contexts/tratamentosContext";
 import { DIAS_SEMANA, formatarDias } from "@/utils/calendarioHelpers";
+import TimePicker from "@/components/time-picker"
 
 export default function CadastroTratamento() {
   const { medicamentos, baixarEstoque } = useMedicamentos();
@@ -192,6 +193,9 @@ export default function CadastroTratamento() {
             }}
           />
           <Text style={styles.resumo}>{montarResumoDias()}</Text>
+
+          <Text style={styles.label}>Horário de início</Text>
+          <TimePicker/>
 
           <Text style={styles.label}>Quantidade por dia</Text>
           <View style={styles.quantidadeLinha}>
