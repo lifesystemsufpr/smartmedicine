@@ -1,3 +1,4 @@
+import * as Notifications from "expo-notifications"
 import { WeekCalendar } from "@/components/calendario";
 import { ResumoCards } from "@/components/resumoCards";
 import { AppColors } from "@/constants/theme";
@@ -5,13 +6,47 @@ import { useMedicamentos } from "@/contexts/medicamentosContext";
 import { useTratamentos } from "@/contexts/tratamentosContext";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+
+// Como a notificação se comporta
+Notifications.setNotificationHandler({
+  handleNotification:
+    async (): Promise<Notifications.NotificationBehavior> => ({
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+})
 
 export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const { medicamentos } = useMedicamentos();
   const { tratamentos } = useTratamentos();
+
+  useEffect(() => {
+    // Permissão para enviar notificação
+    async function requestPermissions(): Promise<void> {
+      const { status } = await Notifications.requestPermissionsAsync()
+      if (status !== "granted") {
+        Alert.alert(
+          "Permissão necessária",
+          "Permita as notificações para o alarme funcionar",
+        )
+      }
+    }
+
+    // Android precisa de criar canal para tocar som
+    if (Platform.OS === "android") {
+      Notifications.setNotificationChannelAsync("alarm-channel", {
+        name: "Alarme",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+      })
+    }
+    requestPermissions()
+  }, [])
 
   return (
     <View style={styles.container}>
