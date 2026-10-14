@@ -5,7 +5,6 @@ import {
 import { useFonts } from "expo-font";
 import { Tabs } from "expo-router";
 
-import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { AppColors, AppFonts } from "@/constants/theme";
 
@@ -23,7 +22,6 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarButton: HapticTab,
         tabBarActiveTintColor: AppColors.primary,
         tabBarInactiveTintColor: AppColors.inactive,
         tabBarLabelStyle: {
@@ -39,7 +37,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="inicio"
         options={{
           title: "Início",
           tabBarIcon: ({ color, size }) => (
