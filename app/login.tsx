@@ -60,7 +60,7 @@ export default function LoginScreen() {
     // TODO: substituir por chamada real ao backend quando disponível.
     setTimeout(() => {
       setIsSubmitting(false);
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/inicio");
     }, 400);
   }
 
