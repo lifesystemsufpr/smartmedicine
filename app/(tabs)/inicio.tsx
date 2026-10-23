@@ -1,13 +1,20 @@
-import * as Notifications from "expo-notifications"
 import { WeekCalendar } from "@/components/calendario";
 import { ResumoCards } from "@/components/resumoCards";
 import { AppColors } from "@/constants/theme";
 import { useMedicamentos } from "@/contexts/medicamentosContext";
 import { useTratamentos } from "@/contexts/tratamentosContext";
 import { Feather } from "@expo/vector-icons";
+import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 
 // Como a notificação se comporta
 Notifications.setNotificationHandler({
@@ -18,7 +25,7 @@ Notifications.setNotificationHandler({
       shouldShowBanner: true,
       shouldShowList: true,
     }),
-})
+});
 
 export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -28,12 +35,12 @@ export default function HomeScreen() {
   useEffect(() => {
     // Permissão para enviar notificação
     async function requestPermissions(): Promise<void> {
-      const { status } = await Notifications.requestPermissionsAsync()
+      const { status } = await Notifications.requestPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
           "Permissão necessária",
           "Permita as notificações para o alarme funcionar",
-        )
+        );
       }
     }
 
@@ -43,10 +50,10 @@ export default function HomeScreen() {
         name: "Alarme",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-      })
+      });
     }
-    requestPermissions()
-  }, [])
+    requestPermissions();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -89,6 +96,8 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.divider,
+    // Adicione ou certifique-se que está assim:
+    flexGrow: 0,
   },
   resumoSection: {
     flex: 1,

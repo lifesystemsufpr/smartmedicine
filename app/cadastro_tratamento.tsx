@@ -1,22 +1,22 @@
 import { styles } from "@/styles/standart";
-import React, { useState } from "react";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { router } from "expo-router";
+import { useState } from "react";
 import {
-  FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
-import { router } from "expo-router";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 import { SeletorDiasSemana } from "@/components/seletorDiasSemana";
+import TimePicker from "@/components/time-picker";
 import { AppColors, AppFonts, CORES_TRATAMENTO } from "@/constants/theme";
 import { useMedicamentos } from "@/contexts/medicamentosContext";
 import { useTratamentos } from "@/contexts/tratamentosContext";
 import { DIAS_SEMANA, formatarDias } from "@/utils/calendarioHelpers";
-import TimePicker from "@/components/time-picker"
 
 export default function CadastroTratamento() {
   const { medicamentos, baixarEstoque } = useMedicamentos();
@@ -33,8 +33,8 @@ export default function CadastroTratamento() {
 
   function alternarDia(index: number) {
     setDiasSelecionados((atual) => {
-      const copia = [...atual]; // cria uma copia do array anterior
-      copia[index] = !copia[index]; // inverte de false para true o dia selecionado
+      const copia = [...atual];
+      copia[index] = !copia[index];
       return copia;
     });
   }
@@ -95,7 +95,11 @@ export default function CadastroTratamento() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={localStyles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.content}>
         <Text style={styles.title}>Cadastro de Tratamento</Text>
 
@@ -119,10 +123,7 @@ export default function CadastroTratamento() {
               return (
                 <Pressable
                   key={corOpcao}
-                  style={[
-                    localStyles.corSwatch,
-                    { backgroundColor: corOpcao },
-                  ]}
+                  style={[localStyles.corSwatch, { backgroundColor: corOpcao }]}
                   onPress={() => setCor(corOpcao)}
                 >
                   {selecionada && (
@@ -195,7 +196,7 @@ export default function CadastroTratamento() {
           <Text style={styles.resumo}>{montarResumoDias()}</Text>
 
           <Text style={styles.label}>Horário de início</Text>
-          <TimePicker/>
+          <TimePicker />
 
           <Text style={styles.label}>Quantidade por dia</Text>
           <View style={styles.quantidadeLinha}>
@@ -229,37 +230,41 @@ export default function CadastroTratamento() {
             <Text style={styles.buttonText}>Adicionar</Text>
           </Pressable>
 
-          <FlatList
-            data={tratamentos}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
+          {/* Lista de tratamentos renderizada via map para rolar perfeitamente com a tela */}
+          <View style={localStyles.listaContainer}>
+            {tratamentos.map((item) => {
               const medicamento = medicamentos.find(
                 (m) => m.id === item.medicamentoId,
               );
               return (
-                <View style={styles.listItem}>
+                <View key={item.id} style={styles.listItem}>
                   <View style={localStyles.itemHeader}>
                     <View
-                      style={[localStyles.corDot, { backgroundColor: item.cor }]}
+                      style={[
+                        localStyles.corDot,
+                        { backgroundColor: item.cor },
+                      ]}
                     />
                     <Text style={localStyles.tratamentoNome}>{item.nome}</Text>
                   </View>
                   <Text style={styles.itemInfo}>
                     {medicamento?.nome ?? "Medicamento removido"} •{" "}
-                    {formatarDias(item.dias)} • {item.quantidadePorDia}x por
-                    dia
+                    {formatarDias(item.dias)} • {item.quantidadePorDia}x por dia
                   </Text>
                 </View>
               );
-            }}
-          />
+            })}
+          </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const localStyles = StyleSheet.create({
+  scrollContent: {
+    paddingBottom: 100, // Dá espaço extra no final para rolar confortavelmente
+  },
   tratamentoNome: {
     fontFamily: AppFonts.semiBold,
     fontSize: 15,
@@ -335,5 +340,9 @@ const localStyles = StyleSheet.create({
     color: AppColors.danger,
     marginTop: -8,
     marginBottom: 8,
+  },
+  listaContainer: {
+    marginTop: 16,
+    gap: 8,
   },
 });
