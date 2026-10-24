@@ -1,14 +1,14 @@
 import { useMedicamentos } from "@/contexts/medicamentosContext";
 import { useTratamentos } from "@/contexts/tratamentosContext";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
+  Dimensions,
   FlatList,
   Pressable,
   StyleSheet,
   Text,
   View,
-  type ViewToken,
 } from "react-native";
 
 import { AppColors, AppFonts } from "@/constants/theme";
@@ -21,22 +21,10 @@ import {
   formatarDias,
   getStartOfWeekDate,
 } from "@/utils/calendarioHelpers";
-import { CalendarioMensalModal } from "./calendarioMensal";
+import CalendarioMensalModal from "./calendarioMensal";
 
-// Calculamos a largura exata que os dias ocupam para que a barra de rolagem
-// fique do tamanho exato do calendário e não vá até o final da tela.
-const CALENDAR_WIDTH = 350;
-const PAST_WEEKS_COUNT = 26;
-const FUTURE_WEEKS_COUNT = 26;
-
-function getFormattedMonthAndYear(date: Date) {
-  return `${MONTH_NAMES[date.getMonth()]} de ${date.getFullYear()}`;
-}
-
-type WeekData = {
-  weekId: string;
-  daysInWeek: Date[];
-};
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const CALENDAR_WIDTH = SCREEN_WIDTH - 32;
 
 type WeekCalendarProps = {
   selectedDate: Date;
@@ -47,21 +35,13 @@ export function WeekCalendar({
   selectedDate,
   onSelectDate,
 }: WeekCalendarProps) {
-  const { tratamentos } = useTratamentos(); // lista compartilhada vem do Context
+  const { tratamentos } = useTratamentos();
   const { medicamentos } = useMedicamentos();
 
-  const diaSelecionadoAbreviacao =
-    DIAS_SEMANA[selectedDate.getDay()].abreviacao;
-  const tratamentosDoDia = useMemo(
-    () =>
-      tratamentos.filter((tratamento) =>
-        tratamento.dias.includes(diaSelecionadoAbreviacao),
-      ),
-    [tratamentos, diaSelecionadoAbreviacao],
-  );
+  const [calendarioExpandidoVisivel, setCalendarioExpandidoVisivel] =
+    useState(false);
 
-  // Para cada dia da semana (dom, seg, ter...), as cores distintas dos
-  // tratamentos que caem nele — vira uma bolinha colorida por tratamento.
+  // Mapeia as cores dos tratamentos por dia da semana (ex: "seg", "ter" -> ["#FF0000", "#00FF00"])
   const coresPorDiaSemana = useMemo(() => {
     const mapa = new Map<string, string[]>();
     tratamentos.forEach((tratamento) => {
@@ -75,78 +55,44 @@ export function WeekCalendar({
     return mapa;
   }, [tratamentos]);
 
-  const currentDate = useMemo(() => new Date(), []);
-  const currentWeekStartDate = useMemo(
-    () => getStartOfWeekDate(currentDate),
-    [currentDate],
+  const startOfWeek = getStartOfWeekDate(selectedDate);
+  const diasDaSemana = Array.from({ length: 7 }, (_, index) =>
+    addDaysToDate(startOfWeek, index),
   );
 
-  // 2. GERAÇÃO DOS DADOS
-  // Cria a lista gigante de semanas (passado, presente e futuro)
-  const calendarWeeks = useMemo<WeekData[]>(() => {
-    return Array.from(
-      { length: PAST_WEEKS_COUNT + FUTURE_WEEKS_COUNT + 1 },
-      (_, index) => {
-        const weekOffset = index - PAST_WEEKS_COUNT;
-        const weekStartDate = addDaysToDate(
-          currentWeekStartDate,
-          weekOffset * 7,
-        );
+  const currentDate = new Date();
 
-        return {
-          weekId: String(weekOffset),
-          daysInWeek: Array.from({ length: 7 }, (_, dayIndex) =>
-            addDaysToDate(weekStartDate, dayIndex),
-          ),
-        };
-      },
-    );
-  }, [currentWeekStartDate]);
-
-  const [currentMonthLabel, setCurrentMonthLabel] = useState(() =>
-    getFormattedMonthAndYear(currentDate),
-  );
-  const [calendarioExpandidoVisivel, setCalendarioExpandidoVisivel] =
-    useState(false);
-
-  // Fica observando o scroll do usuário para saber qual semana ele está vendo agora
-  const handleVisibleWeeksChange = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      const currentlyVisibleWeek = viewableItems[0]?.item as
-        | WeekData
-        | undefined;
-
-      if (currentlyVisibleWeek) {
-        const middleDayOfWeek = currentlyVisibleWeek.daysInWeek[3];
-        setCurrentMonthLabel(getFormattedMonthAndYear(middleDayOfWeek));
-      }
-    },
-  ).current;
-
-  const viewabilityConfiguration = useRef({
-    itemVisiblePercentThreshold: 51,
-  }).current;
-
-  //Ajuda o FlatList a carregar super rápido, pois já dizemos o tamanho exato de cada semana
-  const calculateItemLayout = useCallback(
-    (_: unknown, index: number) => ({
-      length: CALENDAR_WIDTH, // Usamos a largura do calendário aqui
-      offset: CALENDAR_WIDTH * index,
-      index,
-    }),
-    [],
+  const diaSelecionadoAbreviacao =
+    DIAS_SEMANA[selectedDate.getDay()].abreviacao;
+  const tratamentosDoDia = tratamentos.filter((t) =>
+    t.dias.includes(diaSelecionadoAbreviacao),
   );
 
-  // Como cada semana vai ser desenhada na tela
-  const renderWeekRow = useCallback(
-    ({ item }: { item: WeekData }) => (
+  return (
+    <View style={styles.container}>
+      {/* Cabeçalho do Mês */}
+      <Pressable
+        style={styles.monthHeaderRow}
+        onPress={() => setCalendarioExpandidoVisivel(true)}
+      >
+        <Text style={styles.monthHeader}>
+          {MONTH_NAMES[selectedDate.getMonth()]} de {selectedDate.getFullYear()}
+        </Text>
+        <MaterialIcons
+          name="calendar-month"
+          size={18}
+          color={AppColors.primary}
+        />
+      </Pressable>
+
+      {/* Visualização da Semana com as bolinhas/barras de tratamentos */}
       <View style={styles.weekRow}>
-        {item.daysInWeek.map((dayDate) => {
+        {diasDaSemana.map((dayDate) => {
           const isToday = checkIsSameDay(dayDate, currentDate);
           const isSelected = checkIsSameDay(dayDate, selectedDate);
-          const coresDoDia =
-            coresPorDiaSemana.get(DIAS_SEMANA[dayDate.getDay()].abreviacao) ??
-            [];
+
+          const abreviacaoDia = DIAS_SEMANA[dayDate.getDay()].abreviacao;
+          const coresDoDia = coresPorDiaSemana.get(abreviacaoDia) ?? [];
           const corUnica = coresDoDia.length === 1 ? coresDoDia[0] : undefined;
           const temVariasCores = coresDoDia.length > 1;
 
@@ -181,6 +127,8 @@ export function WeekCalendar({
                   {dayDate.getDate()}
                 </Text>
               </View>
+
+              {/* Barra se houver apenas 1 tratamento no dia */}
               {corUnica && (
                 <View
                   style={[
@@ -189,6 +137,8 @@ export function WeekCalendar({
                   ]}
                 />
               )}
+
+              {/* Múltiplas bolinhas se houver mais de 1 tratamento no dia */}
               {temVariasCores && (
                 <View style={styles.dayDotsRow}>
                   {coresDoDia.slice(0, 3).map((cor, index) => (
@@ -203,47 +153,8 @@ export function WeekCalendar({
           );
         })}
       </View>
-    ),
-    [onSelectDate, selectedDate, currentDate, coresPorDiaSemana],
-  );
 
-  return (
-    <View style={styles.calendarContainer}>
-      <Pressable
-        style={styles.monthHeaderRow}
-        onPress={() => setCalendarioExpandidoVisivel(true)}
-        hitSlop={8}
-      >
-        <Text style={styles.monthHeader}>{currentMonthLabel}</Text>
-        <MaterialIcons
-          name="calendar-month"
-          size={16}
-          color={AppColors.primary}
-        />
-      </Pressable>
-
-      <FlatList //
-        data={calendarWeeks}
-        keyExtractor={(item) => item.weekId}
-        renderItem={renderWeekRow}
-        horizontal
-        pagingEnabled
-        decelerationRate="fast"
-        snapToInterval={CALENDAR_WIDTH} // O scroll agora "gruda" na largura certa
-        snapToAlignment="center"
-        showsHorizontalScrollIndicator={true}
-        persistentScrollbar={true}
-        indicatorStyle="black"
-        initialScrollIndex={PAST_WEEKS_COUNT}
-        getItemLayout={calculateItemLayout}
-        onViewableItemsChanged={handleVisibleWeeksChange}
-        viewabilityConfig={viewabilityConfiguration}
-        removeClippedSubviews={true}
-        style={styles.flatList} // Adicionamos estilo à própria FlatList
-        contentContainerStyle={styles.flatListContent}
-      />
-
-      {/* TRATAMENTOS DO DIA SELECIONADO, vindos do Context */}
+      {/* Lista de Tratamentos do Dia */}
       <Text style={styles.listTitle}>Tratamentos do dia</Text>
       <FlatList
         data={tratamentosDoDia}
@@ -273,7 +184,7 @@ export function WeekCalendar({
           </Text>
         }
         contentContainerStyle={styles.listContent}
-        style={styles.list}
+        scrollEnabled={false}
       />
 
       <CalendarioMensalModal
@@ -287,16 +198,18 @@ export function WeekCalendar({
 }
 
 const styles = StyleSheet.create({
-  calendarContainer: {
+  container: {
+    width: CALENDAR_WIDTH,
+    alignSelf: "center",
     gap: 12,
-    flex: 1, // agora o conteúdo ocupa a tela inteira para a lista rolar
+    marginVertical: 8,
   },
   monthHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    marginBottom: 4,
+    paddingVertical: 4,
   },
   monthHeader: {
     fontFamily: AppFonts.semiBold,
@@ -304,23 +217,18 @@ const styles = StyleSheet.create({
     color: AppColors.title,
     textAlign: "center",
   },
-  flatList: {
-    width: CALENDAR_WIDTH, // Limita a largura do scroll à largura do calendário
-    alignSelf: "center", // Centraliza a lista na tela inteira
-    height: 30,
-  },
-  flatListContent: {
-    paddingBottom: 0,
-  },
   weekRow: {
-    width: CALENDAR_WIDTH, // As semanas agora têm exatamente o mesmo tamanho da lista
     flexDirection: "row",
-    justifyContent: "center",
-    gap: 14,
+    justifyContent: "space-between",
+    backgroundColor: AppColors.surface,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 12,
   },
   dayContainer: {
     alignItems: "center",
-    gap: 6,
+    gap: 4,
+    flex: 1,
   },
   weekdayText: {
     fontFamily: AppFonts.medium,
@@ -331,9 +239,9 @@ const styles = StyleSheet.create({
     color: AppColors.primary,
   },
   dayCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -342,8 +250,7 @@ const styles = StyleSheet.create({
     borderColor: AppColors.primary,
   },
   dayCircleSelected: {
-    borderWidth: 2,
-    borderColor: AppColors.label,
+    backgroundColor: AppColors.primary,
   },
   dayNumberText: {
     fontFamily: AppFonts.medium,
@@ -355,43 +262,41 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.semiBold,
   },
   dayNumberTextSelected: {
+    color: "#FFFFFF",
     fontFamily: AppFonts.semiBold,
   },
   barraTratamento: {
-    width: 18,
-    height: 5,
-    borderRadius: 2.5,
-    marginTop: 4,
+    width: 14,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 2,
   },
   dayDotsRow: {
     flexDirection: "row",
-    gap: 3,
-    height: 5,
-    marginTop: 4,
+    gap: 2,
+    height: 4,
+    marginTop: 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
   dayDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
   listTitle: {
     fontFamily: AppFonts.semiBold,
     fontSize: 15,
     color: AppColors.title,
-    paddingHorizontal: 24,
-  },
-  list: {
-    flex: 1,
-    padding: 30, // pega o espaço restante da tela e rola verticalmente
+    marginTop: 8,
   },
   listContent: {
-    paddingHorizontal: 0,
-    paddingBottom: 120,
     gap: 8,
+    paddingBottom: 16,
   },
   listItem: {
     backgroundColor: AppColors.surface,
-    padding: 10,
+    padding: 12,
     borderRadius: 8,
   },
   listItemHeader: {
@@ -419,6 +324,5 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.regular,
     fontSize: 13,
     color: AppColors.muted,
-    paddingHorizontal: 24,
   },
 });

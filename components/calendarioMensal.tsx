@@ -1,7 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import { FlatList, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useEffect, useMemo, useState } from "react";
+import {
+  FlatList,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppColors, AppFonts } from "@/constants/theme";
 import { useMedicamentos } from "@/contexts/medicamentosContext";
@@ -46,7 +53,7 @@ function getMonthGridWeeks(monthDate: Date): Date[][] {
   return weeks;
 }
 
-export function CalendarioMensalModal({
+export default function CalendarioMensalModal({
   visible,
   selectedDate,
   onSelectDate,
