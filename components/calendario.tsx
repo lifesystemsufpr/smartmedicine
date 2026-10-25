@@ -1,7 +1,12 @@
 import { useMedicamentos } from "@/contexts/medicamentosContext";
 import { useTratamentos } from "@/contexts/tratamentosContext";
+import {
+  descreverMedicamentos,
+  getCoresDoDia,
+  getTratamentosDoDia,
+} from "@/utils/tratamentoHelpers";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -13,7 +18,6 @@ import {
 
 import { AppColors, AppFonts } from "@/constants/theme";
 import {
-  DIAS_SEMANA,
   MONTH_NAMES,
   WEEKDAY_INITIALS,
   addDaysToDate,
@@ -41,20 +45,6 @@ export function WeekCalendar({
   const [calendarioExpandidoVisivel, setCalendarioExpandidoVisivel] =
     useState(false);
 
-  // Mapeia as cores dos tratamentos por dia da semana (ex: "seg", "ter" -> ["#FF0000", "#00FF00"])
-  const coresPorDiaSemana = useMemo(() => {
-    const mapa = new Map<string, string[]>();
-    tratamentos.forEach((tratamento) => {
-      tratamento.dias.forEach((diaAbreviado) => {
-        const atual = mapa.get(diaAbreviado) ?? [];
-        if (!atual.includes(tratamento.cor)) {
-          mapa.set(diaAbreviado, [...atual, tratamento.cor]);
-        }
-      });
-    });
-    return mapa;
-  }, [tratamentos]);
-
   const startOfWeek = getStartOfWeekDate(selectedDate);
   const diasDaSemana = Array.from({ length: 7 }, (_, index) =>
     addDaysToDate(startOfWeek, index),
@@ -62,11 +52,7 @@ export function WeekCalendar({
 
   const currentDate = new Date();
 
-  const diaSelecionadoAbreviacao =
-    DIAS_SEMANA[selectedDate.getDay()].abreviacao;
-  const tratamentosDoDia = tratamentos.filter((t) =>
-    t.dias.includes(diaSelecionadoAbreviacao),
-  );
+  const tratamentosDoDia = getTratamentosDoDia(tratamentos, selectedDate);
 
   return (
     <View style={styles.container}>
@@ -91,8 +77,7 @@ export function WeekCalendar({
           const isToday = checkIsSameDay(dayDate, currentDate);
           const isSelected = checkIsSameDay(dayDate, selectedDate);
 
-          const abreviacaoDia = DIAS_SEMANA[dayDate.getDay()].abreviacao;
-          const coresDoDia = coresPorDiaSemana.get(abreviacaoDia) ?? [];
+          const coresDoDia = getCoresDoDia(tratamentos, dayDate);
           const corUnica = coresDoDia.length === 1 ? coresDoDia[0] : undefined;
           const temVariasCores = coresDoDia.length > 1;
 
@@ -111,6 +96,7 @@ export function WeekCalendar({
                 {WEEKDAY_INITIALS[dayDate.getDay()]}
               </Text>
               <View
+                key={`${isSelected}-${isToday}`}
                 style={[
                   styles.dayCircle,
                   isToday && styles.dayCircleToday,
@@ -160,9 +146,6 @@ export function WeekCalendar({
         data={tratamentosDoDia}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
-          const medicamento = medicamentos.find(
-            (m) => m.id === item.medicamentoId,
-          );
           return (
             <View style={styles.listItem}>
               <View style={styles.listItemHeader}>
@@ -172,8 +155,8 @@ export function WeekCalendar({
                 <Text style={styles.listItemNome}>{item.nome}</Text>
               </View>
               <Text style={styles.listItemInfo}>
-                {medicamento?.nome ?? "Medicamento removido"} •{" "}
-                {formatarDias(item.dias)} • {item.quantidadePorDia}x por dia
+                {descreverMedicamentos(item, medicamentos)} •{" "}
+                {formatarDias(item.dias)}
               </Text>
             </View>
           );
@@ -256,6 +239,9 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.medium,
     fontSize: 14,
     color: AppColors.label,
+    textAlign: "center",
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
   dayNumberTextToday: {
     color: AppColors.primary,

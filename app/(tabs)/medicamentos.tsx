@@ -22,6 +22,7 @@ import { useFonts } from "expo-font";
 import { AppColors, AppFonts } from "@/constants/theme";
 import { Medicamento, useMedicamentos } from "@/contexts/medicamentosContext";
 import { Tratamento, useTratamentos } from "@/contexts/tratamentosContext";
+import { calcularConsumoSemanal } from "@/utils/tratamentoHelpers";
 
 const UNIDADES = ["comprimidos", "ml", "gotas", "cápsulas"];
 
@@ -40,13 +41,7 @@ function getAvisoEstoque(
     return "Estoque zerado";
   }
 
-  const consumoSemanal = tratamentos
-    .filter((tratamento) => tratamento.medicamentoId === medicamento.id)
-    .reduce(
-      (total, tratamento) =>
-        total + tratamento.quantidadePorDia * tratamento.dias.length,
-      0,
-    );
+  const consumoSemanal = calcularConsumoSemanal(medicamento.id, tratamentos);
 
   if (consumoSemanal > 0) {
     const consumoDiario = consumoSemanal / 7;

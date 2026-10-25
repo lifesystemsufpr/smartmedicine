@@ -12,6 +12,7 @@ type MedicamentosContextType = {
   medicamentos: Medicamento[];
   adicionarMedicamento: (medicamento: Omit<Medicamento, "id">) => void;
   baixarEstoque: (medicamentoId: string, quantidade: number) => void;
+  devolverEstoque: (medicamentoId: string, quantidade: number) => void;
 };
 
 const MedicamentosContext = createContext<MedicamentosContextType | undefined>(
@@ -48,9 +49,27 @@ export function MedicamentosProvider({
     );
   }
 
+  function devolverEstoque(medicamentoId: string, quantidade: number) {
+    setMedicamentos((atual) =>
+      atual.map((medicamento) =>
+        medicamento.id === medicamentoId
+          ? {
+              ...medicamento,
+              quantidadeEstoque: medicamento.quantidadeEstoque + quantidade,
+            }
+          : medicamento,
+      ),
+    );
+  }
+
   return (
     <MedicamentosContext.Provider
-      value={{ medicamentos, adicionarMedicamento, baixarEstoque }}
+      value={{
+        medicamentos,
+        adicionarMedicamento,
+        baixarEstoque,
+        devolverEstoque,
+      }}
     >
       {children}
     </MedicamentosContext.Provider>

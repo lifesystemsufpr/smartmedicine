@@ -1,3 +1,8 @@
+import {
+  descreverMedicamentos,
+  getCoresDoDia,
+  getTratamentosDoDia,
+} from "@/utils/tratamentoHelpers";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -14,7 +19,6 @@ import { AppColors, AppFonts } from "@/constants/theme";
 import { useMedicamentos } from "@/contexts/medicamentosContext";
 import { useTratamentos } from "@/contexts/tratamentosContext";
 import {
-  DIAS_SEMANA,
   MONTH_NAMES,
   WEEKDAY_INITIALS,
   addDaysToDate,
@@ -80,28 +84,9 @@ export default function CalendarioMensalModal({
   );
   const hoje = useMemo(() => new Date(), []);
 
-  // Para cada dia da semana (dom, seg, ter...), as cores distintas dos
-  // tratamentos que caem nele — usado pra colorir e marcar as células do mês.
-  const coresPorDiaSemana = useMemo(() => {
-    const mapa = new Map<string, string[]>();
-    tratamentos.forEach((tratamento) => {
-      tratamento.dias.forEach((diaAbreviado) => {
-        const atual = mapa.get(diaAbreviado) ?? [];
-        if (!atual.includes(tratamento.cor)) {
-          mapa.set(diaAbreviado, [...atual, tratamento.cor]);
-        }
-      });
-    });
-    return mapa;
-  }, [tratamentos]);
-
-  const diaFocadoAbreviacao = DIAS_SEMANA[diaFocado.getDay()].abreviacao;
   const tratamentosDoDiaFocado = useMemo(
-    () =>
-      tratamentos.filter((tratamento) =>
-        tratamento.dias.includes(diaFocadoAbreviacao),
-      ),
-    [tratamentos, diaFocadoAbreviacao],
+    () => getTratamentosDoDia(tratamentos, diaFocado),
+    [tratamentos, diaFocado],
   );
 
   function irParaMesAnterior() {
@@ -170,9 +155,7 @@ export default function CalendarioMensalModal({
                 const foraDoMes = dia.getMonth() !== mesExibido.getMonth();
                 const isHoje = checkIsSameDay(dia, hoje);
                 const isFocado = checkIsSameDay(dia, diaFocado);
-                const coresDoDia =
-                  coresPorDiaSemana.get(DIAS_SEMANA[dia.getDay()].abreviacao) ??
-                  [];
+                const coresDoDia = getCoresDoDia(tratamentos, dia);
                 const corUnica =
                   coresDoDia.length === 1 ? coresDoDia[0] : undefined;
                 const temVariasCores = coresDoDia.length > 1;
@@ -184,6 +167,7 @@ export default function CalendarioMensalModal({
                     onPress={() => handleTocarDia(dia)}
                   >
                     <View
+                      key={`${isFocado}-${isHoje}`}
                       style={[
                         styles.dayCircle,
                         isHoje && styles.dayCircleHoje,
@@ -239,9 +223,6 @@ export default function CalendarioMensalModal({
           style={styles.painelLista}
           contentContainerStyle={styles.painelListaConteudo}
           renderItem={({ item }) => {
-            const medicamento = medicamentos.find(
-              (m) => m.id === item.medicamentoId,
-            );
             return (
               <View style={styles.painelItem}>
                 <View style={styles.painelItemHeader}>
@@ -254,8 +235,8 @@ export default function CalendarioMensalModal({
                   <Text style={styles.painelItemNome}>{item.nome}</Text>
                 </View>
                 <Text style={styles.painelItemInfo}>
-                  {medicamento?.nome ?? "Medicamento removido"} •{" "}
-                  {formatarDias(item.dias)} • {item.quantidadePorDia}x por dia
+                  {descreverMedicamentos(item, medicamentos)} •{" "}
+                  {formatarDias(item.dias)}
                 </Text>
               </View>
             );
@@ -314,6 +295,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 6,
   },
+
   dayCircle: {
     width: 38,
     height: 38,
@@ -333,6 +315,9 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.medium,
     fontSize: 15,
     color: AppColors.label,
+    textAlign: "center",
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
   barraTratamento: {
     width: 18,

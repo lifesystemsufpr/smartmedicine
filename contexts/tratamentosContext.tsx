@@ -1,17 +1,24 @@
 import React, { createContext, useContext, useState } from "react";
 
+export type ItemTratamento = {
+  medicamentoId: string;
+  quantidadePorDia: number;
+  duracaoDias: number | null; // padrao = uso continuo
+};
+
 export type Tratamento = {
   id: string;
   nome: string;
-  medicamentoId: string;
+  medicamentos: ItemTratamento[];
   dias: string[];
-  quantidadePorDia: number;
   cor: string;
+  dataInicio: Date;
 };
 
 type TratamentosContextType = {
   tratamentos: Tratamento[];
   adicionarTratamento: (tratamento: Omit<Tratamento, "id">) => void;
+  atualizarTratamento: (id: string, dados: Omit<Tratamento, "id">) => void;
 };
 
 const TratamentosContext = createContext<TratamentosContextType | undefined>(
@@ -32,8 +39,18 @@ export function TratamentosProvider({
     ]);
   }
 
+  function atualizarTratamento(id: string, dados: Omit<Tratamento, "id">) {
+    setTratamentos((atual) =>
+      atual.map((tratamento) =>
+        tratamento.id === id ? { ...dados, id } : tratamento,
+      ),
+    );
+  }
+
   return (
-    <TratamentosContext.Provider value={{ tratamentos, adicionarTratamento }}>
+    <TratamentosContext.Provider
+      value={{ tratamentos, adicionarTratamento, atualizarTratamento }}
+    >
       {children}
     </TratamentosContext.Provider>
   );

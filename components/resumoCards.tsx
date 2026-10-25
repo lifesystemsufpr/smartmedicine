@@ -1,6 +1,10 @@
 import { AppColors, AppFonts } from "@/constants/theme";
 import { Medicamento } from "@/contexts/medicamentosContext";
 import { Tratamento } from "@/contexts/tratamentosContext";
+import {
+  calcularConsumoNaSemana,
+  calcularConsumoSemanal,
+} from "@/utils/tratamentoHelpers";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -20,9 +24,7 @@ function getConsumoSemanal(
   medicamento: Medicamento,
   tratamentos: Tratamento[],
 ): number {
-  return tratamentos
-    .filter((t) => t.medicamentoId === medicamento.id)
-    .reduce((total, t) => total + t.quantidadePorDia * t.dias.length, 0);
+  return calcularConsumoSemanal(medicamento.id, tratamentos);
 }
 
 // Quantos dias de consumo restam no estoque. null = sem tratamento (não dá p calcular).
@@ -104,7 +106,10 @@ export function ResumoCards({
     );
 
   const resumoSemana = medicamentos
-    .map((med) => ({ med, semanal: getConsumoSemanal(med, tratamentos) }))
+    .map((med) => ({
+      med,
+      semanal: calcularConsumoNaSemana(med.id, tratamentos),
+    }))
     .filter((item) => item.semanal > 0);
 
   const tudoEmDia =

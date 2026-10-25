@@ -55,6 +55,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="tratamentos"
+        options={{
+          title: "Tratamentos",
+          tabBarIcon: ({ color, size }) => (
+            <IconSymbol
+              size={size}
+              name="list.bullet.clipboard"
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="perfil"
         options={{
           title: "Perfil",

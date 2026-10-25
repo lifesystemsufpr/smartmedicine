@@ -1,11 +1,18 @@
+import { ItemTratamento, useTratamentos } from "@/contexts/tratamentosContext";
 import { styles } from "@/styles/standart";
+import {
+  calcularQuantidadeNecessaria,
+  descreverMedicamentos,
+  inicioDoDia,
+} from "@/utils/tratamentoHelpers";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -15,20 +22,27 @@ import { SeletorDiasSemana } from "@/components/seletorDiasSemana";
 import TimePicker from "@/components/time-picker";
 import { AppColors, AppFonts, CORES_TRATAMENTO } from "@/constants/theme";
 import { useMedicamentos } from "@/contexts/medicamentosContext";
-import { useTratamentos } from "@/contexts/tratamentosContext";
 import { DIAS_SEMANA, formatarDias } from "@/utils/calendarioHelpers";
 
 export default function CadastroTratamento() {
-  const { medicamentos, baixarEstoque } = useMedicamentos();
-  const { tratamentos, adicionarTratamento } = useTratamentos();
+  const { medicamentos, baixarEstoque, devolverEstoque } = useMedicamentos();
+  const { tratamentos, adicionarTratamento, atualizarTratamento } =
+    useTratamentos();
 
-  const [nome, setNome] = useState("");
-  const [medicamentoId, setMedicamentoId] = useState<string | null>(null);
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const tratamentoEditado = tratamentos.find((t) => t.id === id);
+  const [nome, setNome] = useState(tratamentoEditado?.nome ?? "");
+
   const [diasSelecionados, setDiasSelecionados] = useState<boolean[]>(
-    Array(7).fill(false),
+    DIAS_SEMANA.map(
+      (dia) => tratamentoEditado?.dias.includes(dia.abreviacao) ?? false,
+    ),
   );
-  const [quantidadePorDia, setQuantidadePorDia] = useState(1);
-  const [cor, setCor] = useState(CORES_TRATAMENTO[0]);
+
+  const [itens, setItens] = useState<ItemTratamento[]>(
+    tratamentoEditado?.medicamentos ?? [],
+  );
+  const [cor, setCor] = useState(tratamentoEditado?.cor ?? CORES_TRATAMENTO[0]);
   const [erro, setErro] = useState<string | null>(null);
 
   function alternarDia(index: number) {
@@ -37,6 +51,29 @@ export default function CadastroTratamento() {
       copia[index] = !copia[index];
       return copia;
     });
+  }
+
+  function alternarMedicamento(id: string) {
+    setItens((atual) => {
+      const jaSelecionado = atual.some((item) => item.medicamentoId === id);
+      if (jaSelecionado) {
+        return atual.filter((item) => item.medicamentoId !== id);
+      }
+      return [
+        ...atual,
+        { medicamentoId: id, quantidadePorDia: 1, duracaoDias: 7 },
+      ];
+    });
+    if (erro) setErro(null);
+  }
+
+  function atualizarItem(id: string, mudancas: Partial<ItemTratamento>) {
+    setItens((atual) =>
+      atual.map((item) =>
+        item.medicamentoId === id ? { ...item, ...mudancas } : item,
+      ),
+    );
+    if (erro) setErro(null);
   }
 
   function montarResumoDias(): string {
@@ -53,8 +90,8 @@ export default function CadastroTratamento() {
       return;
     }
 
-    if (!medicamentoId) {
-      setErro("Selecione um medicamento do seu estoque.");
+    if (itens.length === 0) {
+      setErro("Selecione ao menos um medicamento do seu estoque.");
       return;
     }
 
@@ -67,31 +104,99 @@ export default function CadastroTratamento() {
       return;
     }
 
-    const medicamento = medicamentos.find((item) => item.id === medicamentoId);
-    const quantidadeNecessaria = quantidadePorDia * diasEscolhidos.length;
+    // confere o estoque de TODOS antes de descontar qualquer um
+    // confere TODOS antes de salvar ou descontar qualquer um
+    for (const item of itens) {
+      const medicamento = medicamentos.find((m) => m.id === item.medicamentoId);
+      const nomeMedicamento = medicamento?.nome ?? "um medicamento";
 
-    if (!medicamento || medicamento.quantidadeEstoque < quantidadeNecessaria) {
-      setErro(
-        `Estoque insuficiente. Esse tratamento precisa de ${quantidadeNecessaria} unidades por semana.`,
+      if (item.duracaoDias !== null && item.duracaoDias < 1) {
+        setErro(
+          `Informe a duração de ${nomeMedicamento} (mínimo 1 dia) ou marque uso contínuo.`,
+        );
+        return;
+      }
+
+      const necessaria = calcularQuantidadeNecessaria(
+        item,
+        diasEscolhidos.length,
       );
+      const disponivel =
+        (medicamento?.quantidadeEstoque ?? 0) +
+        quantidadeReservada(item.medicamentoId);
+
+      if (!medicamento || disponivel < necessaria) {
+        setErro(
+          `Estoque insuficiente de ${nomeMedicamento}. ` +
+            (item.duracaoDias === null
+              ? `São necessárias ${necessaria} unidades por semana.`
+              : `O tratamento completo precisa de ${necessaria} unidades.`),
+        );
+        return;
+      }
+    }
+
+    // salva e desconta
+    const dados = {
+      nome: nome.trim(),
+      medicamentos: itens,
+      dias: diasEscolhidos,
+      cor,
+    };
+
+    if (tratamentoEditado) {
+      atualizarTratamento(tratamentoEditado.id, {
+        ...dados,
+        dataInicio: tratamentoEditado.dataInicio,
+      });
+
+      // devolve o que a versão antiga tinha descontado
+      tratamentoEditado.medicamentos.forEach((itemAntigo) => {
+        devolverEstoque(
+          itemAntigo.medicamentoId,
+          calcularQuantidadeNecessaria(
+            itemAntigo,
+            tratamentoEditado.dias.length,
+          ),
+        );
+      });
+    } else {
+      adicionarTratamento({ ...dados, dataInicio: inicioDoDia(new Date()) });
+    }
+
+    // desconta o que a versão nova precisa
+    itens.forEach((item) => {
+      baixarEstoque(
+        item.medicamentoId,
+        calcularQuantidadeNecessaria(item, diasEscolhidos.length),
+      ); // a logica de baixar estoque precisa mudar posteriormente
+    });
+
+    if (tratamentoEditado) {
+      router.back();
       return;
     }
 
-    adicionarTratamento({
-      nome: nome.trim(),
-      medicamentoId,
-      dias: diasEscolhidos,
-      quantidadePorDia,
-      cor,
-    });
-    baixarEstoque(medicamentoId, quantidadeNecessaria);
-
     setErro(null);
     setNome("");
-    setMedicamentoId(null);
+    setItens([]);
     setDiasSelecionados(Array(7).fill(false));
-    setQuantidadePorDia(1);
     setCor(CORES_TRATAMENTO[0]);
+  }
+
+  // Quanto esse tratamento já tinha descontado desse remédio (só na edição)
+  function quantidadeReservada(medicamentoId: string): number {
+    if (!tratamentoEditado) return 0;
+
+    const itemAntigo = tratamentoEditado.medicamentos.find(
+      (i) => i.medicamentoId === medicamentoId,
+    );
+    if (!itemAntigo) return 0;
+
+    return calcularQuantidadeNecessaria(
+      itemAntigo,
+      tratamentoEditado.dias.length,
+    );
   }
 
   return (
@@ -101,7 +206,9 @@ export default function CadastroTratamento() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>Cadastro de Tratamento</Text>
+        <Text style={styles.title}>
+          {tratamentoEditado ? "Editar Tratamento" : "Cadastro de Tratamento"}
+        </Text>
 
         <View style={styles.form}>
           <Text style={styles.label}>Nome do tratamento</Text>
@@ -156,7 +263,9 @@ export default function CadastroTratamento() {
           ) : (
             <View style={localStyles.medicamentoLinha}>
               {medicamentos.map((medicamento) => {
-                const selecionado = medicamento.id === medicamentoId;
+                const selecionado = itens.some(
+                  (i) => i.medicamentoId === medicamento.id,
+                );
                 return (
                   <Pressable
                     key={medicamento.id}
@@ -164,10 +273,7 @@ export default function CadastroTratamento() {
                       localStyles.medicamentoChip,
                       selecionado && localStyles.medicamentoChipSelecionado,
                     ]}
-                    onPress={() => {
-                      setMedicamentoId(medicamento.id);
-                      if (erro) setErro(null);
-                    }}
+                    onPress={() => alternarMedicamento(medicamento.id)}
                   >
                     <Text
                       style={[
@@ -198,44 +304,104 @@ export default function CadastroTratamento() {
           <Text style={styles.label}>Horário de início</Text>
           <TimePicker />
 
-          <Text style={styles.label}>Quantidade por dia</Text>
-          <View style={styles.quantidadeLinha}>
-            {[1, 2, 3, 4, 5].map((qtd) => {
-              const selecionado = qtd === quantidadePorDia;
-              return (
-                <Pressable
-                  key={qtd}
-                  style={[
-                    styles.quantidade,
-                    selecionado && styles.quantidadeSelecionada,
-                  ]}
-                  onPress={() => setQuantidadePorDia(qtd)}
-                >
-                  <Text
-                    style={[
-                      styles.quantidadeTexto,
-                      selecionado && styles.quantidadeTextoSelecionado,
-                    ]}
+          {itens.length > 0 && (
+            <>
+              <Text style={styles.label}>Quantidade por dia</Text>
+              {itens.map((item) => {
+                const medicamento = medicamentos.find(
+                  (m) => m.id === item.medicamentoId,
+                );
+                return (
+                  <View
+                    key={item.medicamentoId}
+                    style={localStyles.itemQuantidade}
                   >
-                    {qtd}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+                    <Text style={localStyles.itemQuantidadeNome}>
+                      {medicamento?.nome}
+                    </Text>
+                    <View style={styles.quantidadeLinha}>
+                      {[1, 2, 3, 4, 5].map((qtd) => {
+                        const selecionado = qtd === item.quantidadePorDia;
+                        return (
+                          <Pressable
+                            key={qtd}
+                            style={[
+                              styles.quantidade,
+                              selecionado && styles.quantidadeSelecionada,
+                            ]}
+                            onPress={() =>
+                              atualizarItem(item.medicamentoId, {
+                                quantidadePorDia: qtd,
+                              })
+                            }
+                          >
+                            <Text
+                              style={[
+                                styles.quantidadeTexto,
+                                selecionado &&
+                                  styles.quantidadeTextoSelecionado,
+                              ]}
+                            >
+                              {qtd}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                    <View style={localStyles.duracaoLinha}>
+                      <Text style={localStyles.duracaoTexto}>Uso contínuo</Text>
+                      <Switch
+                        value={item.duracaoDias === null}
+                        onValueChange={(continuo) =>
+                          atualizarItem(item.medicamentoId, {
+                            duracaoDias: continuo ? null : 7,
+                          })
+                        }
+                        trackColor={{
+                          true: AppColors.primary,
+                          false: AppColors.inputBorder,
+                        }}
+                      />
+                    </View>
+
+                    {item.duracaoDias !== null && (
+                      <View style={localStyles.duracaoLinha}>
+                        <Text style={localStyles.duracaoTexto}>
+                          Duração (dias de uso)
+                        </Text>
+                        <TextInput
+                          style={[styles.input, localStyles.duracaoInput]}
+                          keyboardType="number-pad"
+                          maxLength={3}
+                          value={
+                            item.duracaoDias === 0
+                              ? ""
+                              : String(item.duracaoDias)
+                          }
+                          onChangeText={(texto) =>
+                            atualizarItem(item.medicamentoId, {
+                              duracaoDias: Number(texto.replace(/\D/g, "")),
+                            })
+                          }
+                        />
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </>
+          )}
 
           {erro && <Text style={localStyles.erroTexto}>{erro}</Text>}
 
           <Pressable style={styles.button} onPress={handleAdicionar}>
-            <Text style={styles.buttonText}>Adicionar</Text>
+            <Text style={styles.buttonText}>
+              {tratamentoEditado ? "Salvar alterações" : "Adicionar"}
+            </Text>
           </Pressable>
 
-          {/* Lista de tratamentos renderizada via map para rolar perfeitamente com a tela */}
           <View style={localStyles.listaContainer}>
             {tratamentos.map((item) => {
-              const medicamento = medicamentos.find(
-                (m) => m.id === item.medicamentoId,
-              );
               return (
                 <View key={item.id} style={styles.listItem}>
                   <View style={localStyles.itemHeader}>
@@ -248,8 +414,8 @@ export default function CadastroTratamento() {
                     <Text style={localStyles.tratamentoNome}>{item.nome}</Text>
                   </View>
                   <Text style={styles.itemInfo}>
-                    {medicamento?.nome ?? "Medicamento removido"} •{" "}
-                    {formatarDias(item.dias)} • {item.quantidadePorDia}x por dia
+                    {descreverMedicamentos(item, medicamentos)} •{" "}
+                    {formatarDias(item.dias)}
                   </Text>
                 </View>
               );
@@ -262,6 +428,32 @@ export default function CadastroTratamento() {
 }
 
 const localStyles = StyleSheet.create({
+  duracaoLinha: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  duracaoTexto: {
+    fontFamily: AppFonts.regular,
+    fontSize: 13,
+    color: AppColors.label,
+  },
+  duracaoInput: {
+    width: 80,
+    textAlign: "center",
+    marginBottom: 0,
+  },
+
+  itemQuantidade: {
+    marginBottom: 8,
+  },
+  itemQuantidadeNome: {
+    fontFamily: AppFonts.medium,
+    fontSize: 13,
+    color: AppColors.secondaryText,
+    marginBottom: 6,
+  },
   scrollContent: {
     paddingBottom: 100, // Dá espaço extra no final para rolar confortavelmente
   },
