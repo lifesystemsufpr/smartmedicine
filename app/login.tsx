@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -10,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 
 import {
   Poppins_400Regular,
@@ -75,11 +75,17 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.logoWrap}>
-            <MaterialIcons name="medication" size={40} color={AppColors.primary} />
+            <MaterialIcons
+              name="medication"
+              size={40}
+              color={AppColors.primary}
+            />
           </View>
 
           <Text style={styles.title}>Smart Medicine</Text>
-          <Text style={styles.subtitle}>Entre para continuar cuidando da sua saúde</Text>
+          <Text style={styles.subtitle}>
+            Entre para continuar cuidando da sua saúde
+          </Text>
 
           <View style={styles.form}>
             <View>
